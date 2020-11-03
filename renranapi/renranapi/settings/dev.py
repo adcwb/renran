@@ -14,7 +14,7 @@ import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+# BASE_DIR 因为我们的项目目录结构已经发生改变，所以此时BASE_DIR代表的就是项目主应用目录，不是项目根目录
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -28,7 +28,6 @@ DEBUG = True
 # ALLOWED_HOSTS = ["192.168.136.128","127.0.0.1"] # 自己打开ubuntu终端输入命令 ip a 查看ens33对应的ip地址
 ALLOWED_HOSTS = ["*"] # 自己打开ubuntu终端输入命令 ip a 查看ens33对应的ip地址
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,9 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -75,10 +77,18 @@ WSGI_APPLICATION = 'renranapi.wsgi.application'
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    # },
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+        'ENGINE': 'django.db.backends.mysql',
+        "HOST": "127.0.0.1",   # 数据库所在地址
+        "PORT": 3306,
+        "USER": "root", # 登录账号
+        "PASSWORD": "123456",  # 登录密码
+        "NAME": "renran",      # 数据库名称
+    },
 }
 
 
@@ -119,3 +129,58 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# 日志配置
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': { # 日志的处理格式
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(module)s %(lineno)d %(message)s'
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            # 日志位置,日志文件名,日志保存目录logs必须手动创建
+            'filename': os.path.join(os.path.dirname(BASE_DIR), "logs/renran.log"),
+            # 单个日志文件的最大值,这里我们设置300M
+            'maxBytes': 300 * 1024 * 1024,
+            # 备份日志文件的数量,设置最大日志数量为10
+            'backupCount': 10,
+            # 日志格式:详细格式
+            'formatter': 'verbose'
+        },
+    },
+    # 日志对象
+    'loggers': {
+        'django': { # 固定必须叫django，将来django内部也会有异常的处理，只会调用django下标的日志对象
+            'handlers': ['console', 'file'],
+            'propagate': True, # 是否让日志信息继续冒泡给其他的日志处理系统
+        },
+    }
+}
+
+
+REST_FRAMEWORK = {
+    # 异常处理
+    'EXCEPTION_HANDLER': 'renranapi.utils.exceptions.custom_exception_handler',
+}
+# 跨域CORS设置
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = False
