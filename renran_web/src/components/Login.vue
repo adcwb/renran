@@ -28,7 +28,7 @@
     <div class="forget-btn">
       <a class="" data-toggle="dropdown" href="">登录遇到问题?</a>
     </div>
-    <button class="sign-in-button" id="sign-in-form-submit-btn" type="button" @click="loginhandler">
+    <button class="sign-in-button" id="sign-in-form-submit-btn" type="button" @click="show_captcha">
       <span id="sign-in-loading"></span>
       登录
     </button>
@@ -63,6 +63,42 @@
           }
         },
         methods:{
+            show_captcha(){
+                // 显示验证码
+
+                // 判断手机号或者密码是否为空！
+                if(this.username.length<1 || this.password.length<1){
+                    // 阻止代码继续往下执行
+                    return false;
+                }
+
+
+                var captcha1 = new TencentCaptcha(this.$settings.TC_captcha.app_id, res=>{
+                    // 用户操作验证码成功以后的回调函数，这个函数将会在对象创建以后，在页面那种进行监听用户的操作
+                    // res就是用户操作成功以后，验证码服务器返回的内容
+                    /**
+                   res:
+                    appid: "2086888489"  # 验证码的APPID
+                    randstr: "@G0V"      # 随机字符串，防止重复
+                    ret: 0               # 0表示用户操作成功，2表示用户主动关闭验证码窗口
+                    ticket: ""           # 验证通过以后的票据，提供给python后端，将来到验证码服务器中进行
+                    */
+                    this.$axios.get(`${this.$settings.Host}/users/captcha/`,{
+                        params:{
+                          ticket: res.ticket,
+                          randstr: res.randstr
+                        }
+                    }).then(response=>{
+                        if(response.data.detail){
+                            // 继续进行登录处理
+                            this.loginhandler();
+                        }
+                    }).catch(error=>{
+                        this.$message.error("对不起，验证码校验不通过！");
+                    });
+                });
+                captcha1.show(); // 显示验证码
+            },
             loginhandler(){
                 // 登录处理
                 this.$axios.post(`${this.$settings.Host}/users/login/`,{

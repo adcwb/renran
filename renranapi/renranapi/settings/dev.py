@@ -207,3 +207,12 @@ JWT_AUTH = {
 # 配置项的值格式有要求，必须严格按照以下格式编写，多一个符号都会报错
 # AUTH_USER_MODEL = "子应用.模型类名"
 AUTH_USER_MODEL = 'users.User'
+
+AUTHENTICATION_BACKENDS = ['users.utils.CustomAuthUserModelBackend',]
+
+# 腾讯防水墙配置
+TENCENT_CAPTCHA = {
+    "GATEWAY": "https://ssl.captcha.qq.com/ticket/verify",
+    "APPID": "2021539286",
+    "App_Secret_Key": "0UNkPIA8yP_cjiLubTSKaJQ**",
+}
