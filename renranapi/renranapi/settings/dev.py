@@ -11,10 +11,14 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # BASE_DIR 因为我们的项目目录结构已经发生改变，所以此时BASE_DIR代表的就是项目主应用目录，不是项目根目录
+# 把网站子应用所在目录设置为了导报路径
+
+sys.path.insert(0, os.path.join(BASE_DIR, "apps"))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -26,7 +30,7 @@ SECRET_KEY = 'iyd$05@kw&hi#@av_35=1q%&&07lwgtjd*68&)h5#+ulgu^pm@'
 DEBUG = True
 
 # ALLOWED_HOSTS = ["192.168.136.128","127.0.0.1"] # 自己打开ubuntu终端输入命令 ip a 查看ens33对应的ip地址
-ALLOWED_HOSTS = ["*"] # 自己打开ubuntu终端输入命令 ip a 查看ens33对应的ip地址
+ALLOWED_HOSTS = ["*"]  # 自己打开ubuntu终端输入命令 ip a 查看ens33对应的ip地址
 
 # Application definition
 
@@ -39,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'corsheaders',
+    'users',    # app register
 ]
 
 MIDDLEWARE = [
@@ -72,7 +77,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'renranapi.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
@@ -83,14 +87,13 @@ DATABASES = {
     # },
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        "HOST": "127.0.0.1",   # 数据库所在地址
+        "HOST": "127.0.0.1",  # 数据库所在地址
         "PORT": 3306,
-        "USER": "root", # 登录账号
+        "USER": "root",  # 登录账号
         "PASSWORD": "123456",  # 登录密码
-        "NAME": "renran",      # 数据库名称
+        "NAME": "renran",  # 数据库名称
     },
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -110,7 +113,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
@@ -124,7 +126,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
@@ -134,7 +135,7 @@ STATIC_URL = '/static/'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': { # 日志的处理格式
+    'formatters': {  # 日志的处理格式
         'verbose': {
             'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s'
         },
@@ -169,18 +170,40 @@ LOGGING = {
     },
     # 日志对象
     'loggers': {
-        'django': { # 固定必须叫django，将来django内部也会有异常的处理，只会调用django下标的日志对象
+        'django': {  # 固定必须叫django，将来django内部也会有异常的处理，只会调用django下标的日志对象
             'handlers': ['console', 'file'],
-            'propagate': True, # 是否让日志信息继续冒泡给其他的日志处理系统
+            'propagate': True,  # 是否让日志信息继续冒泡给其他的日志处理系统
         },
     }
 }
 
-
 REST_FRAMEWORK = {
     # 异常处理
     'EXCEPTION_HANDLER': 'renranapi.utils.exceptions.custom_exception_handler',
+    # 认证方式
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        # 新增jwt认证，注意不能删除session认证，因我们后面的admin运营站点还是使用的session认证
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
 }
 # 跨域CORS设置
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = False
+
+
+# jwt的配置选项
+import datetime
+JWT_AUTH = {
+    # jwt token的有效期，默认是7天
+    # 'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),
+    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=3),
+    # 登录成功以后的自定义相应内容
+    'JWT_RESPONSE_PAYLOAD_HANDLER': 'users.utils.jwt_response_payload_handler',
+}
+
+# 告诉django，调用自定义用户模型替换原来内置的用户模型
+# 配置项的值格式有要求，必须严格按照以下格式编写，多一个符号都会报错
+# AUTH_USER_MODEL = "子应用.模型类名"
+AUTH_USER_MODEL = 'users.User'
